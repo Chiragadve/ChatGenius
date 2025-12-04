@@ -48,9 +48,9 @@ export default function ChannelsProvider({ children }: { children: React.ReactNo
     const load = async () => {
       const [{ data: channelsData, error: chErr }, { data: memberData, error: memErr }] =
         await Promise.all([
-          supabase.from<Channel>("channels_with_count").select("*").order("created_at", { ascending: true }),
+          supabase.from("channels_with_count").select("*").order("created_at", { ascending: true }),
           supabase
-            .from<{ channel_id: string }>("channel_members")
+            .from("channel_members")
             .select("channel_id")
             .eq("user_id", user.id)
         ]);
@@ -59,8 +59,8 @@ export default function ChannelsProvider({ children }: { children: React.ReactNo
       if (memErr) console.error("memberships load error", memErr);
 
       if (mounted) {
-        setAllChannels(channelsData ?? []);
-        setJoinedIds(new Set(memberData?.map((m) => m.channel_id) ?? []));
+        setAllChannels((channelsData as Channel[]) ?? []);
+        setJoinedIds(new Set((memberData as { channel_id: string }[])?.map((m) => m.channel_id) ?? []));
       }
     };
 
@@ -87,13 +87,13 @@ export default function ChannelsProvider({ children }: { children: React.ReactNo
             if (prev.find((c) => c.id === row.channel_id)) return prev;
             // fetch channel async without blocking state updates
             supabase
-              .from<Channel>("channels_with_count")
+              .from("channels_with_count")
               .select("*")
               .eq("id", row.channel_id)
               .single()
               .then(({ data }) => {
                 if (data) {
-                  setAllChannels((curr) => (curr.find((c) => c.id === data.id) ? curr : [...curr, data]));
+                  setAllChannels((curr) => (curr.find((c) => c.id === (data as Channel).id) ? curr : [...curr, data as Channel]));
                 }
               });
             return prev;
